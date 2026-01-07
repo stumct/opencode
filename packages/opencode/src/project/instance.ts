@@ -14,12 +14,12 @@ const context = Context.create<Context>("instance")
 const cache = new Map<string, Promise<Context>>()
 
 export const Instance = {
-  async provide<R>(input: { directory: string; init?: () => Promise<any>; fn: () => R }): Promise<R> {
+  async provide<R>(input: { directory: string; root?: string; init?: () => Promise<any>; fn: () => R }): Promise<R> {
     let existing = cache.get(input.directory)
     if (!existing) {
       Log.Default.info("creating instance", { directory: input.directory })
       existing = iife(async () => {
-        const { project, sandbox } = await Project.fromDirectory(input.directory)
+        const { project, sandbox } = await Project.fromDirectory(input.directory, { root: input.root })
         const ctx = {
           directory: input.directory,
           worktree: sandbox,

@@ -60,6 +60,8 @@ export namespace Server {
 
   let _url: URL | undefined
   let _corsWhitelist: string[] = []
+  let _defaultDirectory: string | undefined
+  let _defaultRoot: string | undefined
 
   export function url(): URL {
     return _url ?? new URL("http://localhost:4096")
@@ -246,9 +248,13 @@ export namespace Server {
         },
       )
       .use(async (c, next) => {
-        const directory = c.req.query("directory") || c.req.header("x-opencode-directory") || process.cwd()
+        const queryDirectory = c.req.query("directory")
+        const headerDirectory = c.req.header("x-opencode-directory")
+        const directory = queryDirectory || headerDirectory || _defaultDirectory || process.cwd()
+        const root = queryDirectory || headerDirectory ? directory : _defaultRoot
         return Instance.provide({
           directory,
+          root,
           init: InstanceBootstrap,
           async fn() {
             return next()
@@ -2829,8 +2835,10 @@ export namespace Server {
     return result
   }
 
-  export function listen(opts: { port: number; hostname: string; mdns?: boolean; cors?: string[] }) {
+  export function listen(opts: { port: number; hostname: string; mdns?: boolean; cors?: string[]; directory?: string }) {
     _corsWhitelist = opts.cors ?? []
+    _defaultDirectory = opts.directory ?? process.cwd()
+    _defaultRoot = opts.directory ? _defaultDirectory : undefined
 
     const args = {
       hostname: opts.hostname,

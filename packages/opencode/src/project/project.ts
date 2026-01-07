@@ -16,6 +16,9 @@ import { existsSync } from "fs"
 
 export namespace Project {
   const log = Log.create({ service: "project" })
+  type Root = {
+    root?: string
+  }
   export const Info = z
     .object({
       id: z.string(),
@@ -44,8 +47,9 @@ export namespace Project {
     Updated: BusEvent.define("project.updated", Info),
   }
 
-  export async function fromDirectory(directory: string) {
-    log.info("fromDirectory", { directory })
+  export async function fromDirectory(directory: string, input?: Root) {
+    const root = input?.root ? path.resolve(input.root) : undefined
+    log.info("fromDirectory", { directory, root })
 
     const { id, sandbox, worktree, vcs } = await iife(async () => {
       const matches = Filesystem.up({ targets: [".git"], start: directory })
@@ -158,6 +162,16 @@ export namespace Project {
           sandbox,
           worktree,
           vcs: "git",
+        }
+      }
+
+      if (root) {
+        const id = `root-${Bun.hash.xxHash32(root)}`
+        return {
+          id,
+          worktree: root,
+          sandbox: root,
+          vcs: Info.shape.vcs.parse(Flag.OPENCODE_FAKE_VCS),
         }
       }
 
