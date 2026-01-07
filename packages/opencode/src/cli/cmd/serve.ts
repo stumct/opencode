@@ -7,7 +7,6 @@ export const ServeCommand = cmd({
   command: "serve",
   builder: (yargs) =>
     withNetworkOptions(yargs).option("cwd", {
-      alias: ["root"],
       describe: "working directory",
       type: "string",
     }),
